@@ -203,16 +203,16 @@ impl RenderDispatcher for MovementRenderDispatcher {
     fn render(&self, progress: f64) -> Result<()> {
         let new_rect = self.start_rect.lerp(self.target_rect, progress, self.style);
 
-        // using MoveWindow because it runs faster than SetWindowPos
+        //  MoveWindow runs faster than SetWindowPos, but it doesn't support async window pos
         // so animation have more fps and feel smoother
-        WindowsApi::move_window(self.hwnd, &new_rect, false)?;
+        WindowsApi::position_window(self.hwnd, &new_rect, self.top, true)?;
         WindowsApi::invalidate_rect(self.hwnd, None, false);
 
         Ok(())
     }
 
     fn post_render(&self) -> Result<()> {
-        WindowsApi::position_window(self.hwnd, &self.target_rect, self.top)?;
+        WindowsApi::position_window(self.hwnd, &self.target_rect, self.top, true)?;
         if ANIMATION_MANAGER
             .lock()
             .count_in_progress(MovementRenderDispatcher::PREFIX)
@@ -461,7 +461,7 @@ impl Window {
 
             AnimationEngine::animate(render_dispatcher, duration)
         } else {
-            WindowsApi::position_window(self.hwnd, layout, top)
+            WindowsApi::position_window(self.hwnd, layout, top, true)
         }
     }
 
